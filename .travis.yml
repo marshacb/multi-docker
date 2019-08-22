@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t marshacb/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true marshacb/react-test npm test
+
+after_success:
+  - docker build -t marshacb/multi-client ./client
+  - docker build -t marshacb/multi-nginx ./nginx
+  - docker build -t marshacb/multi-server ./server
+  - docker build -t marshacb/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push marshacb/multi-client
+  - docker push marshacb/multi-nginx
+  - docker push marshacb/multi-server
+  - docker push marshacb/multi-worker
